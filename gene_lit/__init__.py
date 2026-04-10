@@ -1,3 +1,3 @@
-"""Gene ↔ literature pipeline: PubMed → OpenAI or Gemini (analysis + report)."""
+"""Gene ↔ literature pipeline: PubMed → Gemini (default) or OpenAI (analysis + report)."""
 
 __version__ = "0.1.0"
