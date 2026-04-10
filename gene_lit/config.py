@@ -10,7 +10,7 @@ Optional:
   NCBI_API_KEY   — https://www.ncbi.nlm.nih.gov/account/ (API Key Management)
   CONTACT_EMAIL  — recommended for NCBI Entrez policy
   OPENAI_MODEL   — default gpt-4o
-  GEMINI_MODEL   — default gemini-1.5-flash
+  GEMINI_MODEL   — default gemini-2.0-flash (bare gemini-1.5-flash is retired for this API)
 """
 
 from __future__ import annotations
@@ -82,5 +82,5 @@ def load_settings() -> Settings:
         ncbi_api_key=_opt("NCBI_API_KEY") or None,
         contact_email=_opt("CONTACT_EMAIL") or "anonymous@example.com",
         openai_model=_opt("OPENAI_MODEL") or "gpt-4o",
-        gemini_model=_opt("GEMINI_MODEL") or "gemini-1.5-flash",
+        gemini_model=_opt("GEMINI_MODEL") or "gemini-2.0-flash",
     )

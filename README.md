@@ -51,5 +51,5 @@ Outputs go to `outputs/run_<timestamp>/`:
 
 Override via environment (see `.env.example`):
 
-- `GEMINI_MODEL` (default: `gemini-1.5-flash`)
+- `GEMINI_MODEL` (default: `gemini-2.0-flash`). If you get `404 models/... not found`, set a name from [Gemini models](https://ai.google.dev/gemini-api/docs/models) (e.g. `gemini-2.5-flash` or `gemini-1.5-flash-002`).
 - `OPENAI_MODEL` (default: `gpt-4o`) — only if `LLM_PROVIDER=openai`

@@ -10,6 +10,20 @@ from openai import OpenAI
 
 from gene_lit.pubmed import Paper
 
+try:
+    from google.api_core import exceptions as google_api_exceptions
+except ImportError:
+    google_api_exceptions = None  # type: ignore[misc, assignment]
+
+
+def _reraise_gemini_model_not_found(model: str, exc: BaseException) -> None:
+    if google_api_exceptions and isinstance(exc, google_api_exceptions.NotFound):
+        raise RuntimeError(
+            f"Gemini model {model!r} is not available for generateContent. "
+            "Set GEMINI_MODEL in `.env` to a current id from "
+            "https://ai.google.dev/gemini-api/docs/models (e.g. gemini-2.0-flash or gemini-2.5-flash)."
+        ) from exc
+
 _ANALYSIS_SYSTEM = (
     "You are a biomedical literature analyst. "
     "Only use information from the provided paper records. "
@@ -145,7 +159,11 @@ def analyze_gene_literature_gemini(
         ),
         system_instruction=_ANALYSIS_SYSTEM,
     )
-    response = gm.generate_content(user)
+    try:
+        response = gm.generate_content(user)
+    except Exception as e:
+        _reraise_gemini_model_not_found(model, e)
+        raise
     text = response.text or "{}"
     data = _parse_json_object(text)
     cited = [str(x) for x in data.get("cited_pmids", [])]
@@ -252,9 +270,14 @@ def structure_findings_gemini(
         ),
         system_instruction=_STRUCTURE_SYSTEM,
     )
-    response = gm.generate_content(
-        "Integrate the following data into the JSON schema described in your instructions:\n" + payload
-    )
+    try:
+        response = gm.generate_content(
+            "Integrate the following data into the JSON schema described in your instructions:\n"
+            + payload
+        )
+    except Exception as e:
+        _reraise_gemini_model_not_found(model, e)
+        raise
     text = response.text or "{}"
     return _parse_json_object(text)
 
