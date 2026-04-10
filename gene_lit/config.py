@@ -10,7 +10,8 @@ Optional:
   NCBI_API_KEY   — https://www.ncbi.nlm.nih.gov/account/ (API Key Management)
   CONTACT_EMAIL  — recommended for NCBI Entrez policy
   OPENAI_MODEL   — default gpt-4o
-  GEMINI_MODEL   — default gemini-2.0-flash (bare gemini-1.5-flash is retired for this API)
+  GEMINI_MODEL     — default gemini-2.5-flash
+  GEMINI_DELAY_SEC — seconds to wait between Gemini calls (default 6; helps free-tier RPM)
 """
 
 from __future__ import annotations
@@ -38,10 +39,21 @@ class Settings:
     contact_email: str
     openai_model: str
     gemini_model: str
+    gemini_delay_sec: float
 
 
 def _opt(name: str, default: str = "") -> str:
     return os.environ.get(name, default).strip()
+
+
+def _opt_float(name: str, default: float) -> float:
+    raw = os.environ.get(name, "").strip()
+    if not raw:
+        return default
+    try:
+        return float(raw)
+    except ValueError:
+        return default
 
 
 def load_settings() -> Settings:
@@ -82,5 +94,6 @@ def load_settings() -> Settings:
         ncbi_api_key=_opt("NCBI_API_KEY") or None,
         contact_email=_opt("CONTACT_EMAIL") or "anonymous@example.com",
         openai_model=_opt("OPENAI_MODEL") or "gpt-4o",
-        gemini_model=_opt("GEMINI_MODEL") or "gemini-2.0-flash",
+        gemini_model=_opt("GEMINI_MODEL") or "gemini-2.5-flash",
+        gemini_delay_sec=max(0.0, _opt_float("GEMINI_DELAY_SEC", 6.0)),
     )

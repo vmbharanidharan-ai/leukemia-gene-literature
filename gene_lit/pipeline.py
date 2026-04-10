@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import time
 from collections import defaultdict
 from dataclasses import asdict
 from datetime import datetime, timezone
@@ -156,11 +157,16 @@ def run(
             json.dumps(analysis, indent=2, ensure_ascii=False),
             encoding="utf-8",
         )
+        if settings.llm_provider == "gemini" and settings.gemini_delay_sec > 0:
+            time.sleep(settings.gemini_delay_sec)
 
     (run_dir / "per_gene_analyses.json").write_text(
         json.dumps(per_gene_analyses, indent=2, ensure_ascii=False),
         encoding="utf-8",
     )
+
+    if settings.llm_provider == "gemini" and settings.gemini_delay_sec > 0:
+        time.sleep(settings.gemini_delay_sec)
 
     structured = structure_findings(
         provider=settings.llm_provider,

@@ -51,5 +51,10 @@ Outputs go to `outputs/run_<timestamp>/`:
 
 Override via environment (see `.env.example`):
 
-- `GEMINI_MODEL` (default: `gemini-2.0-flash`). If you get `404 models/... not found`, set a name from [Gemini models](https://ai.google.dev/gemini-api/docs/models) (e.g. `gemini-2.5-flash` or `gemini-1.5-flash-002`).
+- `GEMINI_MODEL` (default: `gemini-2.5-flash`). If you get `404 models/... not found`, pick a name from [Gemini models](https://ai.google.dev/gemini-api/docs/models).
+- `GEMINI_DELAY_SEC` (default: `6`) — pause between Gemini calls to reduce burst traffic on the free tier.
+
+### Gemini quota / `429` / “quota exceeded”
+
+Free tier has per-minute and per-day caps. If you see **RESOURCE_EXHAUSTED** or **limit: 0**, the pipeline **retries with backoff** and spaces out calls. You can still hit limits if the daily quota is used up: **wait**, try **`GEMINI_MODEL`** with another model id, **raise `GEMINI_DELAY_SEC`** (e.g. `15`), or run with **fewer genes** / lower **`--max-papers`**. See [rate limits](https://ai.google.dev/gemini-api/docs/rate-limits); billing on your Google AI / Cloud project increases limits.
 - `OPENAI_MODEL` (default: `gpt-4o`) — only if `LLM_PROVIDER=openai`

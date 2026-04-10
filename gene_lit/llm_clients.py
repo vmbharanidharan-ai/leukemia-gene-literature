@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import random
 import re
+import time
 from typing import Any, Optional
 
 from openai import OpenAI
@@ -23,6 +25,42 @@ def _reraise_gemini_model_not_found(model: str, exc: BaseException) -> None:
             "Set GEMINI_MODEL in `.env` to a current id from "
             "https://ai.google.dev/gemini-api/docs/models (e.g. gemini-2.0-flash or gemini-2.5-flash)."
         ) from exc
+
+
+def _parse_retry_after_seconds(message: str) -> Optional[float]:
+    m = re.search(r"retry in ([0-9.]+)\s*s", message, re.I)
+    if m:
+        return float(m.group(1)) + 0.25
+    return None
+
+
+def _gemini_generate_with_retry(gm: Any, content: str, *, model: str) -> Any:
+    """Retry on 429 RESOURCE_EXHAUSTED with server-suggested or exponential backoff."""
+    max_attempts = 12
+    last: Optional[BaseException] = None
+    for attempt in range(max_attempts):
+        try:
+            return gm.generate_content(content)
+        except Exception as e:
+            last = e
+            _reraise_gemini_model_not_found(model, e)
+            if google_api_exceptions and isinstance(e, google_api_exceptions.ResourceExhausted):
+                msg = str(e)
+                parsed = _parse_retry_after_seconds(msg)
+                if parsed is not None:
+                    wait = parsed + random.uniform(0.05, 0.5)
+                else:
+                    wait = min(120.0, 3.0 * (2 ** min(attempt, 6))) + random.uniform(0, 0.4)
+                time.sleep(max(2.0, wait))
+                continue
+            raise
+    raise RuntimeError(
+        "Gemini API quota or rate limit still exceeded after retries. "
+        "Try: wait 15–60 minutes; set GEMINI_MODEL to another model (e.g. gemini-2.5-flash or gemini-2.0-flash); "
+        "increase GEMINI_DELAY_SEC in `.env` (e.g. 15); fewer genes or lower --max-papers; "
+        "see https://ai.google.dev/gemini-api/docs/rate-limits — you may need a new API key "
+        "or billing enabled if free-tier quota is exhausted."
+    ) from last
 
 _ANALYSIS_SYSTEM = (
     "You are a biomedical literature analyst. "
@@ -159,11 +197,7 @@ def analyze_gene_literature_gemini(
         ),
         system_instruction=_ANALYSIS_SYSTEM,
     )
-    try:
-        response = gm.generate_content(user)
-    except Exception as e:
-        _reraise_gemini_model_not_found(model, e)
-        raise
+    response = _gemini_generate_with_retry(gm, user, model=model)
     text = response.text or "{}"
     data = _parse_json_object(text)
     cited = [str(x) for x in data.get("cited_pmids", [])]
@@ -270,14 +304,12 @@ def structure_findings_gemini(
         ),
         system_instruction=_STRUCTURE_SYSTEM,
     )
-    try:
-        response = gm.generate_content(
-            "Integrate the following data into the JSON schema described in your instructions:\n"
-            + payload
-        )
-    except Exception as e:
-        _reraise_gemini_model_not_found(model, e)
-        raise
+    response = _gemini_generate_with_retry(
+        gm,
+        "Integrate the following data into the JSON schema described in your instructions:\n"
+        + payload,
+        model=model,
+    )
     text = response.text or "{}"
     return _parse_json_object(text)
 
