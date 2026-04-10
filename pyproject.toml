@@ -1,0 +1,22 @@
+[project]
+name = "leukemia-gene-literature"
+version = "0.1.0"
+description = "Gene list + topic → PubMed retrieval → Claude analysis → GPT structured report"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+  "anthropic>=0.40.0",
+  "openai>=1.55.0",
+  "biopython>=1.84",
+  "python-dotenv>=1.0.1",
+]
+
+[project.scripts]
+gene-literature-pipeline = "gene_lit.cli:main"
+
+[build-system]
+requires = ["setuptools>=69.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["gene_lit"]
