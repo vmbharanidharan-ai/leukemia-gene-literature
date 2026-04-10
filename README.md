@@ -3,8 +3,21 @@
 End-to-end flow:
 
 1. **PubMed** — E-utilities search per gene + topic (with leukemia/AML synonyms).
-2. **Claude** — grounded per-gene analysis (scores, pathways, **only PMIDs from retrieved records**).
-3. **OpenAI (GPT)** — structured JSON + Markdown report (ranking, overlap narrative, references).
+2. **LLM (same provider for both steps)** — per-gene grounded analysis (scores, pathways, **only PMIDs from retrieved records**).
+3. **Same LLM** — structured JSON + Markdown report (ranking, overlap narrative, references).
+
+## Providers
+
+| `LLM_PROVIDER` | API key | Notes |
+|----------------|---------|--------|
+| `openai` (default) | `OPENAI_API_KEY` | [OpenAI API keys](https://platform.openai.com/api-keys) |
+| `gemini` | `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) — free tier suitable for experimentation |
+
+For Gemini, install the extra dependency:
+
+```bash
+pip install -e ".[gemini]"
+```
 
 ## Setup
 
@@ -13,14 +26,11 @@ cd leukemia-gene-literature
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e .
+# If using Gemini:
+pip install -e ".[gemini]"
 ```
 
-Copy **`.env.example`** → **`.env`** and add your keys. Comments in `.env.example` point to where each key is obtained.
-
-Required:
-
-- `ANTHROPIC_API_KEY` — [Anthropic Console](https://console.anthropic.com/)
-- `OPENAI_API_KEY` — [OpenAI API keys](https://platform.openai.com/api-keys)
+Copy **`.env.example`** → **`.env`** and set `LLM_PROVIDER` plus the matching key.
 
 Optional:
 
@@ -39,13 +49,13 @@ Outputs go to `outputs/run_<timestamp>/`:
 |------|-----------|
 | `retrieval_*.json` / `retrieval_all.json` | Queries, PMIDs, abstracts |
 | `overlap.json` | Shared PMIDs, pairwise Jaccard |
-| `claude_*.json` / `claude_all.json` | Per-gene Claude analysis |
-| `structured_report.json` | GPT JSON (includes `markdown_report`) |
-| `report.md` | Markdown report if present in structured output |
+| `analysis_*.json` / `per_gene_analyses.json` | Per-gene LLM analysis |
+| `structured_report.json` | Final JSON (includes `markdown_report`) |
+| `report.md` | Markdown report if present |
 
 ## Models
 
 Override via environment (see `.env.example`):
 
-- `CLAUDE_MODEL` (default: `claude-sonnet-4-20250514`)
 - `OPENAI_MODEL` (default: `gpt-4o`)
+- `GEMINI_MODEL` (default: `gemini-1.5-flash`)

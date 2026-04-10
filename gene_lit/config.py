@@ -1,14 +1,18 @@
 """Load settings from environment. Missing required keys raise clear errors.
 
-Fill in values in `.env` (copy from `.env.example`). Required keys:
-  ANTHROPIC_API_KEY  — https://console.anthropic.com/
-  OPENAI_API_KEY     — https://platform.openai.com/api-keys
+Fill in values in `.env` (copy from `.env.example`).
+
+LLM_PROVIDER:
+  openai (default) — needs OPENAI_API_KEY (https://platform.openai.com/api-keys)
+  gemini          — needs GEMINI_API_KEY only; free tier via Google AI Studio
+                     https://aistudio.google.com/apikey
+                     pip install google-generativeai (or: pip install -e ".[gemini]")
 
 Optional:
-  NCBI_API_KEY       — https://www.ncbi.nlm.nih.gov/account/ (API Key Management)
-  CONTACT_EMAIL      — your email (NCBI Entrez policy)
-  CLAUDE_MODEL       — override default Claude model id
-  OPENAI_MODEL       — override default OpenAI model name
+  NCBI_API_KEY   — https://www.ncbi.nlm.nih.gov/account/ (API Key Management)
+  CONTACT_EMAIL  — recommended for NCBI Entrez policy
+  OPENAI_MODEL   — default gpt-4o
+  GEMINI_MODEL   — default gemini-1.5-flash
 """
 
 from __future__ import annotations
@@ -24,23 +28,13 @@ load_dotenv()
 
 @dataclass(frozen=True)
 class Settings:
-    anthropic_api_key: str
-    openai_api_key: str
+    llm_provider: str
+    openai_api_key: Optional[str]
+    gemini_api_key: Optional[str]
     ncbi_api_key: Optional[str]
     contact_email: str
-    claude_model: str
     openai_model: str
-
-
-def _req(name: str) -> str:
-    v = os.environ.get(name, "").strip()
-    if not v:
-        raise RuntimeError(
-            f"Missing required environment variable {name}. "
-            f"Copy `.env.example` to `.env` and set {name}. "
-            "See comments in `.env.example` for where to obtain keys."
-        )
-    return v
+    gemini_model: str
 
 
 def _opt(name: str, default: str = "") -> str:
@@ -48,11 +42,33 @@ def _opt(name: str, default: str = "") -> str:
 
 
 def load_settings() -> Settings:
+    provider = (_opt("LLM_PROVIDER") or "openai").lower()
+    openai_key = _opt("OPENAI_API_KEY") or None
+    gemini_key = _opt("GEMINI_API_KEY") or None
+
+    if provider == "openai" and not openai_key:
+        raise RuntimeError(
+            "LLM_PROVIDER=openai requires OPENAI_API_KEY. "
+            "Set it in `.env` (see `.env.example`). "
+            "For a free-tier option, set LLM_PROVIDER=gemini and GEMINI_API_KEY from "
+            "https://aistudio.google.com/apikey"
+        )
+    if provider == "gemini" and not gemini_key:
+        raise RuntimeError(
+            "LLM_PROVIDER=gemini requires GEMINI_API_KEY. "
+            "Create a free key at https://aistudio.google.com/apikey and add it to `.env`."
+        )
+    if provider not in ("openai", "gemini"):
+        raise RuntimeError(
+            f"Invalid LLM_PROVIDER={provider!r}. Use 'openai' or 'gemini'."
+        )
+
     return Settings(
-        anthropic_api_key=_req("ANTHROPIC_API_KEY"),
-        openai_api_key=_req("OPENAI_API_KEY"),
+        llm_provider=provider,
+        openai_api_key=openai_key,
+        gemini_api_key=gemini_key,
         ncbi_api_key=_opt("NCBI_API_KEY") or None,
         contact_email=_opt("CONTACT_EMAIL") or "anonymous@example.com",
-        claude_model=_opt("CLAUDE_MODEL") or "claude-sonnet-4-20250514",
         openai_model=_opt("OPENAI_MODEL") or "gpt-4o",
+        gemini_model=_opt("GEMINI_MODEL") or "gemini-1.5-flash",
     )

@@ -13,7 +13,7 @@ from gene_lit.pipeline import run
 
 def main(argv: Optional[List[str]] = None) -> None:
     p = argparse.ArgumentParser(
-        description="PubMed → Claude (analyze) → GPT (structure). Set API keys in `.env` (see `.env.example`)."
+        description="PubMed → LLM per-gene analysis → LLM report (OpenAI or Gemini). See `.env.example`."
     )
     p.add_argument(
         "--genes",

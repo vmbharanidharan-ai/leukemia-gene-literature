@@ -1,4 +1,4 @@
-"""End-to-end orchestration: PubMed → Claude → overlap stats → OpenAI structuring."""
+"""End-to-end orchestration: PubMed → LLM per-gene analysis → overlap → LLM structuring."""
 
 from __future__ import annotations
 
@@ -9,10 +9,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
-from gene_lit.claude_client import analyze_gene_literature
 from gene_lit.config import Settings, load_settings
 from gene_lit.io_util import load_genes
-from gene_lit.openai_client import structure_findings
+from gene_lit.llm_clients import analyze_gene_literature, structure_findings
 from gene_lit.pubmed import Paper, build_pubmed_query, fetch_medline_records, search_pubmed
 
 
@@ -143,29 +142,35 @@ def run(
             )
             continue
         analysis = analyze_gene_literature(
-            api_key=settings.anthropic_api_key,
-            model=settings.claude_model,
+            provider=settings.llm_provider,
             gene=gene,
             topic=topic,
             papers=papers,
+            openai_api_key=settings.openai_api_key,
+            openai_model=settings.openai_model,
+            gemini_api_key=settings.gemini_api_key,
+            gemini_model=settings.gemini_model,
         )
         per_gene_analyses.append(analysis)
-        (run_dir / f"claude_{gene}.json").write_text(
+        (run_dir / f"analysis_{gene}.json").write_text(
             json.dumps(analysis, indent=2, ensure_ascii=False),
             encoding="utf-8",
         )
 
-    (run_dir / "claude_all.json").write_text(
+    (run_dir / "per_gene_analyses.json").write_text(
         json.dumps(per_gene_analyses, indent=2, ensure_ascii=False),
         encoding="utf-8",
     )
 
     structured = structure_findings(
-        api_key=settings.openai_api_key,
-        model=settings.openai_model,
+        provider=settings.llm_provider,
         topic=topic,
         per_gene_analyses=per_gene_analyses,
         overlap_stats=overlap_stats,
+        openai_api_key=settings.openai_api_key,
+        openai_model=settings.openai_model,
+        gemini_api_key=settings.gemini_api_key,
+        gemini_model=settings.gemini_model,
     )
     (run_dir / "structured_report.json").write_text(
         json.dumps(structured, indent=2, ensure_ascii=False),
