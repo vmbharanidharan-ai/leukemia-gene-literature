@@ -3,10 +3,8 @@
 Fill in values in `.env` (copy from `.env.example`).
 
 LLM_PROVIDER:
-  openai (default) — needs OPENAI_API_KEY (https://platform.openai.com/api-keys)
-  gemini          — needs GEMINI_API_KEY only; free tier via Google AI Studio
-                     https://aistudio.google.com/apikey
-                     pip install google-generativeai (or: pip install -e ".[gemini]")
+  gemini (default) — needs GEMINI_API_KEY (https://aistudio.google.com/apikey)
+  openai           — needs OPENAI_API_KEY (https://platform.openai.com/api-keys)
 
 Optional:
   NCBI_API_KEY   — https://www.ncbi.nlm.nih.gov/account/ (API Key Management)
@@ -19,11 +17,16 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Optional
 
 from dotenv import load_dotenv
 
-load_dotenv()
+# Load `.env` from the project root (next to pyproject.toml), not only from cwd,
+# so `python -m gene_lit` works when the shell is not in this directory.
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+load_dotenv(_PROJECT_ROOT / ".env")
+load_dotenv()  # optional: also respect a `.env` in the current working directory
 
 
 @dataclass(frozen=True)
@@ -42,21 +45,30 @@ def _opt(name: str, default: str = "") -> str:
 
 
 def load_settings() -> Settings:
-    provider = (_opt("LLM_PROVIDER") or "openai").lower()
+    provider = (_opt("LLM_PROVIDER") or "gemini").lower()
     openai_key = _opt("OPENAI_API_KEY") or None
     gemini_key = _opt("GEMINI_API_KEY") or None
 
     if provider == "openai" and not openai_key:
+        raw = os.environ.get("OPENAI_API_KEY")
+        hint = ""
+        if raw is not None and not str(raw).strip():
+            hint = " Your `.env` has OPENAI_API_KEY= but the value is empty—paste the key after the = and save."
         raise RuntimeError(
-            "LLM_PROVIDER=openai requires OPENAI_API_KEY. "
-            "Set it in `.env` (see `.env.example`). "
-            "For a free-tier option, set LLM_PROVIDER=gemini and GEMINI_API_KEY from "
-            "https://aistudio.google.com/apikey"
+            "LLM_PROVIDER=openai requires a non-empty OPENAI_API_KEY in `.env`."
+            + hint
+            + " See `.env.example`. "
+            "To use Gemini instead, set LLM_PROVIDER=gemini and GEMINI_API_KEY."
         )
     if provider == "gemini" and not gemini_key:
+        raw_g = os.environ.get("GEMINI_API_KEY")
+        hint_g = ""
+        if raw_g is not None and not str(raw_g).strip():
+            hint_g = " Your `.env` has GEMINI_API_KEY= but the value is empty—paste the key after the = and save."
         raise RuntimeError(
-            "LLM_PROVIDER=gemini requires GEMINI_API_KEY. "
-            "Create a free key at https://aistudio.google.com/apikey and add it to `.env`."
+            "LLM_PROVIDER=gemini requires a non-empty GEMINI_API_KEY in `.env`."
+            + hint_g
+            + " Create a key at https://aistudio.google.com/apikey"
         )
     if provider not in ("openai", "gemini"):
         raise RuntimeError(

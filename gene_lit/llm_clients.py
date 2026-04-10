@@ -119,8 +119,8 @@ def analyze_gene_literature_gemini(
         import google.generativeai as genai
     except ImportError as e:
         raise RuntimeError(
-            "LLM_PROVIDER=gemini requires google-generativeai. "
-            'Run: pip install "google-generativeai>=0.8.0"'
+            "google-generativeai is required for Gemini. "
+            'Run: pip install -e .   (or: pip install "google-generativeai>=0.8.0")'
         ) from e
 
     allowed_pmids = {p.pmid for p in papers}
@@ -231,8 +231,8 @@ def structure_findings_gemini(
         import google.generativeai as genai
     except ImportError as e:
         raise RuntimeError(
-            "LLM_PROVIDER=gemini requires google-generativeai. "
-            'Run: pip install "google-generativeai>=0.8.0"'
+            "google-generativeai is required for Gemini. "
+            'Run: pip install -e .   (or: pip install "google-generativeai>=0.8.0")'
         ) from e
 
     genai.configure(api_key=api_key)

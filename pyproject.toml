@@ -1,18 +1,14 @@
 [project]
 name = "leukemia-gene-literature"
 version = "0.1.0"
-description = "Gene list + topic → PubMed → OpenAI or Gemini (analysis + structured report)"
+description = "Gene list + topic → PubMed → Gemini (default) or OpenAI (analysis + structured report)"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
+  "google-generativeai>=0.8.0",
   "openai>=1.55.0",
   "biopython>=1.84",
   "python-dotenv>=1.0.1",
-]
-
-[project.optional-dependencies]
-gemini = [
-  "google-generativeai>=0.8.0",
 ]
 
 [project.scripts]

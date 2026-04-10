@@ -6,18 +6,14 @@ End-to-end flow:
 2. **LLM (same provider for both steps)** — per-gene grounded analysis (scores, pathways, **only PMIDs from retrieved records**).
 3. **Same LLM** — structured JSON + Markdown report (ranking, overlap narrative, references).
 
-## Providers
+## Default: Google Gemini
 
 | `LLM_PROVIDER` | API key | Notes |
 |----------------|---------|--------|
-| `openai` (default) | `OPENAI_API_KEY` | [OpenAI API keys](https://platform.openai.com/api-keys) |
-| `gemini` | `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) — free tier suitable for experimentation |
+| **`gemini`** (default) | `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) — free tier for experimentation |
+| `openai` | `OPENAI_API_KEY` | [OpenAI API keys](https://platform.openai.com/api-keys) |
 
-For Gemini, install the extra dependency:
-
-```bash
-pip install -e ".[gemini]"
-```
+`google-generativeai` is included in `pip install -e .` so you do not need an extra install step for Gemini.
 
 ## Setup
 
@@ -26,11 +22,9 @@ cd leukemia-gene-literature
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e .
-# If using Gemini:
-pip install -e ".[gemini]"
 ```
 
-Copy **`.env.example`** → **`.env`** and set `LLM_PROVIDER` plus the matching key.
+Copy **`.env.example`** → **`.env`** and set **`GEMINI_API_KEY`** (unless you switch to OpenAI).
 
 Optional:
 
@@ -57,5 +51,5 @@ Outputs go to `outputs/run_<timestamp>/`:
 
 Override via environment (see `.env.example`):
 
-- `OPENAI_MODEL` (default: `gpt-4o`)
 - `GEMINI_MODEL` (default: `gemini-1.5-flash`)
+- `OPENAI_MODEL` (default: `gpt-4o`) — only if `LLM_PROVIDER=openai`
